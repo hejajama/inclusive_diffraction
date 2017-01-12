@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <sstream>
+#include <sstream> 
 #include <iomanip>
 
 #include <gsl/gsl_rng.h>
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     // have error handling everywhere!
     
     double Qsqr=0;
-    double xbj=0; // x for F2
+    double xpom=0; // x for F2
     double t=0.1;
     int A=1;
     DGLAPDist *gd=0;  // Initialized and used if we have nucleus consisting of ipsatnucleons (old ipsat)
@@ -101,44 +101,14 @@ int main(int argc, char* argv[])
             }
             else
             {
-                // Construct nucleus
-                std::vector<DipoleAmplitude* > nucleons;
-                for (int j=0; j<A; j++)
-                {
-                    if (string(argv[i+2])=="ipsatproton")
-                    {
-                        if (j==0)
-                            gd = new DGLAPDist;
-                        //Ipsat_Proton *nucleon = new Ipsat_Proton(gd);
-                        Ipsat_Proton *nucleon = new Ipsat_Proton();
-                        nucleon->SetProtonWidth(StrToReal(argv[i+3]));
-                        nucleon->SetQuarkWidth(StrToReal(argv[i+4]));
-                       
-                        
-                            nucleon->SetShape(GAUSSIAN);
-                            if (argc > i+5)
-                            {
-                                if (string(argv[i+5])=="fluxtube")
-                                {
-                                    nucleon->SetStructure(CENTER_TUBES);
-                                    nucleon->SetFluxTubeNormalization(StrToReal(argv[i+5]));
-                                }
-                                else if (string(argv[i+5]).substr(0,1)!="-")
-                                {
-                                    cerr << "Unknown ipsatproton option " << argv[i+5] << endl;
-                                    exit(1);
-                                }
-                            }
-                        
-                        nucleons.push_back(nucleon);
-
-                    }
-                }
-                amp = new Nucleons(nucleons);
+                amp = new Smooth_ws_nuke(A);
             }
             
         }
-       
+        else if (string(argv[i])=="-Q2")
+            Qsqr = StrToReal(argv[i+1]);
+        else if (string(argv[i])=="-xpom")
+            xpom = StrToReal(argv[i+1]);
         else if (string(argv[i]).substr(0,1)=="-")
         {
             cerr << "Unknown parameter " << argv[i] << endl;
@@ -156,23 +126,26 @@ int main(int argc, char* argv[])
     amp->InitializeTarget();
     
     
-    cout << "# " << InfoStr() << endl;
+    cout << "# " << InfoStr() ;
     InitializeWSDistribution(197);
         
 
     
     InclusiveDiffraction diffraction(amp);
     
+    cout << "#Q^2=" << Qsqr << " GeV^2, xpom=" << xpom << endl;
     
-    for (double beta=0.05; beta<0.95; beta+=0.05)
+    for (double beta=0.02; beta<=0.98; beta+=0.02)
+    //for (double beta=0.0005; beta<0.1; beta*=2)
     {
-		//double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(0.001, beta, 5);
-		//double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(0.001, beta, 5);
-		//cout << beta << " " << 0.001*f_qq_t << " " << 0.001*f_qq_l << endl;
-		double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(0.001, beta, 5);
-		//double ms = diffraction.DiffractiveStructureFunction_qqg_MS_T(0.001, beta, 5);
+		//double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xpom, beta, 5);
+		//double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xpom, beta, 5);
+		//cout << beta << " " << xpom*f_qq_t << " " << 0.001*f_qq_l << endl;
+		double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(xpom, beta, Qsqr);
+		//double ms = diffraction.DiffractiveStructureFunction_qqg_MS_T(xpom, beta, Qsqr);
 		cout << beta << " " << gbw << endl;
-		//cout << beta << " " << f_qq_t << " " << f_qq_l << endl;
+        //exit(1);
+        //cout << beta << " " << f_qq_t << " " << f_qq_l << endl;
 	}
     
     

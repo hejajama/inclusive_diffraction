@@ -20,9 +20,9 @@
 #include <virtual_photon.hpp>
 using namespace std;
 
-const int INTERVALS=2;
+const int INTERVALS=3;
 const double ACCURACY=0.05;
-const double MAXR=40;
+const double MAXR=100;
 
 gsl_integration_workspace *gsl_wp_kint;
 gsl_integration_workspace *gsl_wp_bint;

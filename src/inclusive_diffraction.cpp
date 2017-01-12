@@ -36,7 +36,7 @@ double inthelperf_zint_t(double z, void* p)
 {
 	inthelper_inclusive* par = (inthelper_inclusive*)p;
 	
-	int flavor=0;
+    int flavor=par->flavor;
 	
 	double phi1 = par->diffraction->Qq_component_n(par->xpom, par->qsqr, par->Mxsqr, z, 1, flavor);
 	double phi0 = par->diffraction->Qq_component_n(par->xpom, par->qsqr, par->Mxsqr, z, 0, flavor);
@@ -52,7 +52,7 @@ double inthelperf_zint_l(double z, void* p)
 {
 	inthelper_inclusive* par = (inthelper_inclusive*)p;
 	
-	int flavor=0;
+    int flavor=par->flavor;
 	
 	double phi0 = par->diffraction->Qq_component_n(par->xpom, par->qsqr, par->Mxsqr, z, 0, flavor);
 	
@@ -72,12 +72,14 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
 	par.qsqr=qsqr;
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
+     int flavor=0;
+    par.flavor=flavor;
 	
 	gsl_function f;
     f.params = &par;
     f.function = inthelperf_zint_t;
     
-    int flavor=0;
+   
     
     double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
     
