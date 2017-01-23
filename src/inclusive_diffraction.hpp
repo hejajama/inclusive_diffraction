@@ -39,13 +39,15 @@ public:
     double A_bint(double r, double xpom);	// Eq. 13 integrated over d^2b
      
     double QuarkMass(int i);
+    double QuarkCharge(int i);
     int NumberOfQuarks();
     
 private:
     DipoleAmplitude* amplitude;
     
     
-    std::vector<double> m_f;	// Quark amsses
+    std::vector<double> m_f;	// Quark masses
+    std::vector<double> e_f;    // Quark fractional charges
     
 };
 

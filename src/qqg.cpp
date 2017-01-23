@@ -180,36 +180,42 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qqg_GBW_T(double xpom,
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
 	
-	// Init memory
-	gsl_wp_bint = gsl_integration_workspace_alloc(INTERVALS);
-	gsl_wp_kint = gsl_integration_workspace_alloc(INTERVALS);
-	gsl_wp_rint = gsl_integration_workspace_alloc(INTERVALS);
-	
-	gsl_function f;
-    f.params = &par;
-    f.function = inthelperf_zint_gbw;
+    double sum=0;
+    for (unsigned int flavor=0; flavor<e_f.size(); flavor++)
+    {
+        // Init memory
+        gsl_wp_bint = gsl_integration_workspace_alloc(INTERVALS);
+        gsl_wp_kint = gsl_integration_workspace_alloc(INTERVALS);
+        gsl_wp_rint = gsl_integration_workspace_alloc(INTERVALS);
+        
+        gsl_function f;
+        f.params = &par;
+        f.function = inthelperf_zint_gbw;
+
     
-    int flavor=0;
-    par.flavor=flavor;
+        par.flavor=flavor;
+        
+        double z0 = beta;
+        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+        double result,error;
+        int status = gsl_integration_qag(&f, z0, 1.0, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        
+        //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+        
+        if (status)
+            cerr << "#z from " << z0 << " to 1 failed, result " << result << " relerror " << error  << endl;
+        
+        gsl_integration_workspace_free(w);
+        gsl_integration_workspace_free(gsl_wp_bint);
+        gsl_integration_workspace_free(gsl_wp_rint);
+        gsl_integration_workspace_free(gsl_wp_kint);
+        
+        sum += result;
+    }
     
-    double z0 = beta;
-    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-    double result,error;
-    int status = gsl_integration_qag(&f, z0, 1.0, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
-    
-    //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
-    
-    if (status)
-        cerr << "#z from " << z0 << " to 1 failed, result " << result << " relerror " << error  << endl;
-    
-    gsl_integration_workspace_free(w);
-    gsl_integration_workspace_free(gsl_wp_bint);
-    gsl_integration_workspace_free(gsl_wp_rint);
-    gsl_integration_workspace_free(gsl_wp_kint);
     
     
-    
-    return ALPHAs*beta / (8.0*pow(M_PI,4.0)) *  result;
+    return ALPHAs*beta / (8.0*pow(M_PI,4.0)) *  sum;
 }
 
 
@@ -218,9 +224,12 @@ double inthelperf_MS_r(double r, void* p)
 	inthelper_inclusive* par = (inthelper_inclusive*)p;
 	par->r = r;
 	
-	VirtualPhoton photon;
-	photon.SetQuark(Amplitude::U, 0.14);
-	double wf_sqr = photon.PsiSqr_T_intz(par->qsqr, r);
+	
+    VirtualPhoton photon; // default udsc quarks
+    double wf_sqr = photon.PsiSqr_T_intz(par->qsqr, r);
+        
+    
+	
 	
 	return r*wf_sqr*par->diffraction->A_bint(r, par->xpom);
 }

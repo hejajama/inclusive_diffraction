@@ -46,6 +46,8 @@ int main(int argc, char* argv[])
     int A=1;
     DGLAPDist *gd=0;  // Initialized and used if we have nucleus consisting of ipsatnucleons (old ipsat)
     
+    bool ms=false;
+    bool smallb=false;
    
     
     
@@ -109,6 +111,10 @@ int main(int argc, char* argv[])
             Qsqr = StrToReal(argv[i+1]);
         else if (string(argv[i])=="-xpom")
             xpom = StrToReal(argv[i+1]);
+        else if (string(argv[i])=="-ms")
+            ms=true;
+        else if (string(argv[i])=="-smallb")
+            smallb=true;
         else if (string(argv[i]).substr(0,1)=="-")
         {
             cerr << "Unknown parameter " << argv[i] << endl;
@@ -135,17 +141,31 @@ int main(int argc, char* argv[])
     
     cout << "#Q^2=" << Qsqr << " GeV^2, xpom=" << xpom << endl;
     
-    for (double beta=0.02; beta<=0.98; beta+=0.02)
-    //for (double beta=0.0005; beta<0.1; beta*=2)
+    if (ms)
     {
-		//double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xpom, beta, 5);
-		//double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xpom, beta, 5);
-		//cout << beta << " " << xpom*f_qq_t << " " << 0.001*f_qq_l << endl;
+        double ms = diffraction.DiffractiveStructureFunction_qqg_MS_T(xpom, 0, Qsqr);
+        cout << "#MS result" << endl;
+        cout << ms << endl;
+        return 0;
+    }
+    
+    if (smallb)
+    {
+        cout << "# GBW result at small beta" << endl;
+        for (double beta=0.0003; beta<0.1; beta*=2)
+        {
+            double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(xpom, beta, Qsqr);
+            cout << beta << " " << gbw << endl;
+            return 0;
+        }
+    }
+    
+    for (double beta=0.01; beta<=0.98; beta+=0.04)
+    {
+		double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xpom, beta, 5);
+		double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xpom, beta, 5);
 		double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(xpom, beta, Qsqr);
-		//double ms = diffraction.DiffractiveStructureFunction_qqg_MS_T(xpom, beta, Qsqr);
-		cout << beta << " " << gbw << endl;
-        //exit(1);
-        //cout << beta << " " << f_qq_t << " " << f_qq_l << endl;
+        cout << beta << " " << f_qq_t << " " << f_qq_l << " " << gbw << endl;
 	}
     
     

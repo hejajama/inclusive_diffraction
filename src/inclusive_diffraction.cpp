@@ -28,7 +28,8 @@ const double ACCURACY = 0.01;
 InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
 {
 	amplitude=amp;
-	m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4); 
+	m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4);
+    e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0), e_f.push_back(2.0/3.0);
 }
     
  // qq component 
@@ -72,31 +73,35 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
 	par.qsqr=qsqr;
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
-     int flavor=0;
-    par.flavor=flavor;
-	
-	gsl_function f;
-    f.params = &par;
-    f.function = inthelperf_zint_t;
+    double sum=0;
+    for (unsigned int flavor=0; flavor<NumberOfQuarks(); flavor++)
+    {
+        
+        gsl_function f;
+        f.params = &par;
+        f.function = inthelperf_zint_t;
+        
+        par.flavor=flavor;
+        
+        double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+        
+        f.function = inthelperf_zint_t;
+        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+        double result,error;
+        int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        
+        //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+        
+        if (status)
+            cerr << "#z failed, result " << result << " relerror " << error  << endl;
+        
+        gsl_integration_workspace_free(w);
+        
+        sum += result*e_f[flavor]*e_f[flavor];
+    }
     
-   
     
-    double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
-    
-    f.function = inthelperf_zint_t;
-    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-    double result,error;
-    int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
-    
-    //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
-    
-    if (status)
-        cerr << "#z failed, result " << result << " relerror " << error  << endl;
-    
-    gsl_integration_workspace_free(w);
-    
-    
-    return 3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) *  result;
+    return 3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) *  sum;
     
 }
 
@@ -110,28 +115,35 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_L(double xpom, doub
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
 	
-	gsl_function f;
-    f.params = &par;
-    f.function = inthelperf_zint_t;
+	
     
-    int flavor=0;
+    double sum=0;
+    for (unsigned int flavor=0; flavor<NumberOfQuarks(); flavor++)
+    {
+        gsl_function f;
+        f.params = &par;
+        f.function = inthelperf_zint_t;
+        
+        par.flavor=flavor;
     
-    double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+        double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+        
+        f.function = inthelperf_zint_l;
+        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+        double result,error;
+        int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        
+        //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+        
+        if (status)
+            cerr << "#z failed, result " << result << " relerror " << error  << endl;
+        
+        gsl_integration_workspace_free(w);
+        
+        sum += result * e_f[flavor]*e_f[flavor];
+    }
     
-    f.function = inthelperf_zint_l;
-    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-    double result,error;
-    int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
-    
-    //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
-    
-    if (status)
-        cerr << "#z failed, result " << result << " relerror " << error  << endl;
-    
-    gsl_integration_workspace_free(w);
-    
-    
-    return 3.0*qsqr*qsqr*qsqr/(4.0*pow(M_PI,3.0)*beta) *  result;
+    return 3.0*qsqr*qsqr*qsqr/(4.0*pow(M_PI,3.0)*beta) *  sum;
 }
 
 
@@ -258,4 +270,9 @@ int InclusiveDiffraction::NumberOfQuarks()
 double InclusiveDiffraction::QuarkMass(int i)
 {
 	return m_f[i];
+}
+
+double InclusiveDiffraction::QuarkCharge(int i)
+{
+    return e_f[i];
 }
