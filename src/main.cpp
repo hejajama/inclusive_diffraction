@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
         }
     }
     
-    for (double beta=0.01; beta<=0.98; beta+=0.04)
+    for (double beta=0.2; beta<=0.98; beta+=0.4)
     {
         if (gbw)
         {

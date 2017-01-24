@@ -21,8 +21,8 @@ using namespace std;
  
 
 const double MAXR = 100;
-const int INTERVALS = 5;
-const double ACCURACY = 0.01;
+const int INTERVALS = 3;
+const double ACCURACY = 0.05;
 
  
 InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
@@ -84,13 +84,18 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
         par.flavor=flavor;
         
         double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+        if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+        {
+            cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
+            continue;
+        }
         
         f.function = inthelperf_zint_t;
         gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
         double result,error;
         int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
         
-        cout << "# Transverse, flavor " << flavor << "contribution w.o. quark charge " << result*3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) << endl;
+        cout << "# Transverse, flavor " << flavor << " contribution w.o. quark charge " << result*3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) << endl;
         //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
         
         if (status)
@@ -126,8 +131,14 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_L(double xpom, doub
         f.function = inthelperf_zint_t;
         
         par.flavor=flavor;
-    
+        
         double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+        if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+        {
+            //cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
+            continue;
+        }
+    
         
         f.function = inthelperf_zint_l;
         gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
@@ -170,6 +181,7 @@ double inthelperf_Qq_component_n(double r, void* p)
 	double mf=par->diffraction->QuarkMass(par->flavor);
 	double eps = sqrt(z*(1.0-z)*Q2 + mf*mf);
 	double Kn = gsl_sf_bessel_Kn(par->bessel_component, eps*r);
+    
 	double k = sqrt(z*(1.0-z)*Mxsqr-mf*mf);
 	double Jn = gsl_sf_bessel_Jn(par->bessel_component, k*r);
 	double result = r*Jn*Kn*dsigma;
@@ -241,6 +253,13 @@ double InclusiveDiffraction::Qq_component_n(double xpom, double qsqr, double Mxs
 	par.flavor = flavor;
 	par.bessel_component = n;
 	par.z=z;
+    
+    // Check kinematical boundary
+    if (z*(1.0-z)*Mxsqr-m_f[flavor]*m_f[flavor] < 0)
+    {
+        cout << "# Skip phi_n calculation for flavor " << flavor << " at Mxsqr " << Mxsqr << " z " << z << endl;
+        return 0;
+    }
 	
 	gsl_function f;
     f.params = &par;
