@@ -90,6 +90,7 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
         double result,error;
         int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
         
+        cout << "# Transverse, flavor " << flavor << "contribution w.o. quark charge " << result*3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) << endl;
         //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
         
         if (status)

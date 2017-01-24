@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
     
     bool ms=false;
     bool smallb=false;
+    double gbw = false;
    
     
     
@@ -113,6 +114,8 @@ int main(int argc, char* argv[])
             xpom = StrToReal(argv[i+1]);
         else if (string(argv[i])=="-ms")
             ms=true;
+        else if (string(argv[i])=="-gbw")
+            gbw=true;
         else if (string(argv[i])=="-smallb")
             smallb=true;
         else if (string(argv[i]).substr(0,1)=="-")
@@ -162,10 +165,19 @@ int main(int argc, char* argv[])
     
     for (double beta=0.01; beta<=0.98; beta+=0.04)
     {
-		double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xpom, beta, 5);
-		double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xpom, beta, 5);
-		double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(xpom, beta, Qsqr);
-        cout << beta << " " << f_qq_t << " " << f_qq_l << " " << gbw << endl;
+        if (gbw)
+        {
+            double gbw = diffraction.DiffractiveStructureFunction_qqg_GBW_T(xpom, beta, Qsqr);
+            cout << beta << " " <<gbw << endl;
+        }
+        else
+        {
+            double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xpom, beta, Qsqr);
+            double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xpom, beta, Qsqr);
+            cout << beta << " " << f_qq_t << " " << f_qq_l << endl;
+        }
+        
+       
 	}
     
     
