@@ -118,6 +118,8 @@ int main(int argc, char* argv[])
             gbw=true;
         else if (string(argv[i])=="-smallb")
             smallb=true;
+        else if (string(argv[i])=="qq")
+            gbw=false;
         else if (string(argv[i]).substr(0,1)=="-")
         {
             cerr << "Unknown parameter " << argv[i] << endl;
@@ -163,7 +165,7 @@ int main(int argc, char* argv[])
         }
     }
     
-    for (double beta=0.2; beta<=0.98; beta+=0.4)
+    for (double beta=0.01; beta<=0.98; beta+=0.04)
     {
         if (gbw)
         {
