@@ -28,8 +28,11 @@ const double ACCURACY = 0.05;
 InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
 {
 	amplitude=amp;
-	m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4);
-    e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0), e_f.push_back(2.0/3.0);
+    //m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4);
+    //m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(1.3516);
+    m_f.push_back(0.13886); m_f.push_back(0.13886);m_f.push_back(0.13886); m_f.push_back(1.3420);
+    
+    e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
 }
     
  // qq component 
@@ -74,34 +77,52 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
     double sum=0;
+    double prevres = -1;
     for (unsigned int flavor=0; flavor<NumberOfQuarks(); flavor++)
     {
-        
-        gsl_function f;
-        f.params = &par;
-        f.function = inthelperf_zint_t;
-        
-        par.flavor=flavor;
-        
-        double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
-        if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+        double result=0;
+        bool use_cache = false;
+        if (flavor > 0)
         {
-            cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
-            continue;
+            if ( std::abs(m_f[flavor] - m_f[flavor-1]) < 0.00000001)
+            {
+                // Same mass as in previous round so just use tabulated result
+                result = prevres;
+                use_cache = true;
+            }
         }
         
-        f.function = inthelperf_zint_t;
-        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-        double result,error;
-        int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        if (use_cache == false)
+        {
         
-        cout << "# Transverse, flavor " << flavor << " contribution w.o. quark charge " << result*3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) << endl;
-        //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
-        
-        if (status)
-            cerr << "#z failed, result " << result << " relerror " << error  << endl;
-        
-        gsl_integration_workspace_free(w);
+            gsl_function f;
+            f.params = &par;
+            f.function = inthelperf_zint_t;
+            
+            par.flavor=flavor;
+            
+            double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+            if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+            {
+                cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
+                continue;
+            }
+            
+            f.function = inthelperf_zint_t;
+            gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+            double error;
+            int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+            
+            cout << "# Transverse, flavor " << flavor << " contribution w.o. quark charge " << result*3.0*qsqr*qsqr/(16.0*pow(M_PI,3.0)*beta) << endl;
+            //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+            
+            if (status)
+                cerr << "#z failed, result " << result << " relerror " << error  << endl;
+            
+            gsl_integration_workspace_free(w);
+            
+            prevres = result;
+        }
         
         sum += result*e_f[flavor]*e_f[flavor];
     }
@@ -122,36 +143,52 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_L(double xpom, doub
 	par.Mxsqr = mxsqr;
 	
 	
-    
+    double prevres = -1;
     double sum=0;
     for (unsigned int flavor=0; flavor<NumberOfQuarks(); flavor++)
     {
-        gsl_function f;
-        f.params = &par;
-        f.function = inthelperf_zint_t;
-        
-        par.flavor=flavor;
-        
-        double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
-        if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+        double result=0;
+        bool use_cache = false;
+        if (flavor > 0)
         {
-            //cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
-            continue;
+            if ( std::abs(m_f[flavor] - m_f[flavor-1]) < 0.00000001)
+            {
+                // Same mass as in previous round so just use tabulated result
+                result = prevres;
+                use_cache = true;
+            }
         }
-    
         
-        f.function = inthelperf_zint_l;
-        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-        double result,error;
-        int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        if (use_cache == false)
+        {
         
-        //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+            gsl_function f;
+            f.params = &par;
+            f.function = inthelperf_zint_t;
+            
+            par.flavor=flavor;
+            
+            double z0 = (1.0 - sqrt(1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr))/2.0;
+            if (z0 > 0.5 or 1.0 - 4.0*m_f[flavor]*m_f[flavor]/mxsqr < 0)
+            {
+                //cout << "# quark flavor " << flavor << ", beta " << beta << " Mx^2 " << mxsqr << " out of kinematical limit!" << endl;
+                continue;
+            }
         
-        if (status)
-            cerr << "#z failed, result " << result << " relerror " << error  << endl;
-        
-        gsl_integration_workspace_free(w);
-        
+            
+            f.function = inthelperf_zint_l;
+            gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+            double error;
+            int status = gsl_integration_qag(&f, z0, 0.5, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+            
+            //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
+            prevres = result;
+            if (status)
+                cerr << "#z failed, result " << result << " relerror " << error  << endl;
+            
+            gsl_integration_workspace_free(w);
+        }
+            
         sum += result * e_f[flavor]*e_f[flavor];
     }
     

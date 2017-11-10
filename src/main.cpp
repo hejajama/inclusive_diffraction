@@ -19,7 +19,6 @@
 
 #include <dipole.hpp>
 #include <smooth_ws_nuke.hpp>
-#include <ipsat_nucleons.hpp>
 #include <ipsat_proton.hpp>
 #include <vector.hpp>
 #include <ipglasma.hpp>
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
             {
                 if (string(argv[i+2])=="ipsatproton")
                 {
-                    amp = new Ipsat_Proton;
+                    amp = new Ipsat_Proton(MZ);
                     ((Ipsat_Proton*)amp)->SetProtonWidth(StrToReal(argv[i+3]));
                     ((Ipsat_Proton*)amp)->SetQuarkWidth(StrToReal(argv[i+4]));
                   
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
             gbw=true;
         else if (string(argv[i])=="-smallb")
             smallb=true;
-        else if (string(argv[i])=="qq")
+        else if (string(argv[i])=="-qq")
             gbw=false;
         else if (string(argv[i]).substr(0,1)=="-")
         {
@@ -165,7 +164,7 @@ int main(int argc, char* argv[])
         }
     }
     
-    for (double beta=0.01; beta<=0.98; beta+=0.04)
+    for (double beta=0.02; beta<1; beta+=0.04)
     {
         if (gbw)
         {
