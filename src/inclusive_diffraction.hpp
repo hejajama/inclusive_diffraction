@@ -12,6 +12,7 @@
 
 
 #include "dipole.hpp"
+#include <ipsat_proton.hpp>
 #include <vector.hpp>
 #include <vector>
 
@@ -49,6 +50,8 @@ private:
     std::vector<double> m_f;	// Quark masses
     std::vector<double> e_f;    // Quark fractional charges
     
+    Ipsat_version ipsat;
+    
 };
 
 struct inthelper_inclusive
@@ -68,6 +71,7 @@ struct inthelper_inclusive
 	double b_theta;
 	double ksqr;
 	double r2;
+    Ipsat_version ipsat;
 };
 
 #endif /* smooth_ws_nuke_hpp */

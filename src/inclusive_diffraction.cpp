@@ -33,6 +33,8 @@ InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
     m_f.push_back(0.13886); m_f.push_back(0.13886);m_f.push_back(0.13886); m_f.push_back(1.3420);
     
     e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
+    
+    ipsat = MZNONSAT;
 }
     
  // qq component 
@@ -74,6 +76,7 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_T(double xpom, doub
 	par.xpom=xpom;
 	par.beta=beta;
 	par.qsqr=qsqr;
+    par.ipsat=ipsat;
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
     double sum=0;
@@ -138,6 +141,7 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qq_L(double xpom, doub
 	par.diffraction = this;
 	par.xpom=xpom;
 	par.beta=beta;
+    par.ipsat=ipsat;
 	par.qsqr=qsqr;
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
@@ -213,7 +217,7 @@ double inthelperf_Qq_component_n(double r, void* p)
 	Vec q2 = par->b;
 	q1.SetX(q1.GetX()-r/2.0);
 	q2.SetX(q2.GetX()+r/2.0); // Dipole center is now b
-	double dsigma = 2.0 * par->amp->Amplitude(par->xpom, q1, q2);	// 2 as this is sigma_qq, not N
+    double dsigma = 2.0 * par->amp->Amplitude(par->xpom, q1, q2);	// 2 as this is sigma_qq, not N
 
 	double mf=par->diffraction->QuarkMass(par->flavor);
 	double eps = sqrt(z*(1.0-z)*Q2 + mf*mf);
@@ -290,6 +294,7 @@ double InclusiveDiffraction::Qq_component_n(double xpom, double qsqr, double Mxs
 	par.flavor = flavor;
 	par.bessel_component = n;
 	par.z=z;
+    par.ipsat=ipsat;
     
     // Check kinematical boundary
     if (z*(1.0-z)*Mxsqr-m_f[flavor]*m_f[flavor] < 0)
@@ -297,23 +302,45 @@ double InclusiveDiffraction::Qq_component_n(double xpom, double qsqr, double Mxs
         cout << "# Skip phi_n calculation for flavor " << flavor << " at Mxsqr " << Mxsqr << " z " << z << endl;
         return 0;
     }
-	
-	gsl_function f;
-    f.params = &par;
     
-    f.function = inthelperf_Qq_component_n_b;
-    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-    double result,error;
-    int status = gsl_integration_qag(&f, 0, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
-    
-    if (status)
-        cerr << "#thetaint failed, result " << result << " relerror " << error << endl;
-    
-    gsl_integration_workspace_free(w);
+    double result=0;
+    if (ipsat == MZNONSAT)
+    {
+        // Do b integral analytically
+        // Factorize N(r,b) = N(r) e^(-b^2/(2B))
+        // Calculate
+        // [\int dr r K_n J_n N(r, b=0)]^2
+        // And the result is multiplied by the b integral
+        // \int d^2 b [e^(-b^2/(2B)) ]^2 = Pi*B
+        double Bp=4.0;
+        
+        par.b_len = 0;
+         result =inthelperf_Qq_component_n_b_theta(0, &par);
+        result *=  M_PI * Bp; // 0.5 * 2 pi B_p
+        return result;
+        
+    }
+	else
+    {
+        gsl_function f;
+        f.params = &par;
+        
+        f.function = inthelperf_Qq_component_n_b;
+        gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+        double error;
+        int status = gsl_integration_qag(&f, 0, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+        
+        if (status)
+            cerr << "#thetaint failed, result " << result << " relerror " << error << endl;
+        
+        gsl_integration_workspace_free(w);
+        
+        return result;
+    }
     
     //cout << "Helper with n=" << n << " z " << z << " mxsqr " << Mxsqr << " res " << result << " err " << error << endl;
 	
-	return result;
+	
 	
 }
 

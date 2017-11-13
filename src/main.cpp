@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
             {
                 if (string(argv[i+2])=="ipsatproton")
                 {
-                    amp = new Ipsat_Proton(MZ);
+                    amp = new Ipsat_Proton(MZNONSAT);
                     ((Ipsat_Proton*)amp)->SetProtonWidth(StrToReal(argv[i+3]));
                     ((Ipsat_Proton*)amp)->SetQuarkWidth(StrToReal(argv[i+4]));
                   

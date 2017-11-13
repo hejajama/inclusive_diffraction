@@ -50,9 +50,11 @@ double inthelperf_Qqg_component_r(double r, void* p)
 	q2.SetX(q2.GetX()+r/2.0); // Dipole center is now b
 	
 	double dsigma = 2.0 * par->amp->Amplitude(par->xpom, q1, q2);	// 2 as this is sigma_qq, not N
-	double dsigma_adj = 2.0 * ( 1.0 - pow( 1.0 - 0.5*dsigma, 2.0 ) );
-
-	double mf=par->diffraction->QuarkMass(par->flavor);
+    double dsigma_adj;
+    if (par->ipsat == MZNONSAT)
+        dsigma_adj = 2.0 * dsigma; // N_adj = 2N - N^2 \approx 2N
+    else
+        dsigma_adj = 2.0 * ( 1.0 - pow( 1.0 - 0.5*dsigma, 2.0 ) );
 
 	double K2 = gsl_sf_bessel_Kn(2, sqrt(z)*k*r);
 
@@ -151,21 +153,39 @@ double inthelperf_zint_gbw(double z, void* p)
 	
 	par->z=z;
 	
-	gsl_function f;
-    f.params = par;
+    if (par->ipsat == MZNONSAT)
+    {
+        // Do b integral analytically
+        // Factorize N(r,b) = N(r) e^(-b^2/(2B))
+        // b integral gives \int d^2 b [e^(-b^2/(2B))]^2 = pi * B_p
+        
+        // This is possible as we assume here that in ipnonsat model the adjoint dipole
+        // N_adj = 2*N_fund
+        
+        
+        // Effectively evaluate N(r,b) at b=0
+        double B_p=4.0;
+        par->b_len = 0;
+        return M_PI*B_p*inthelperf_Qqg_component_n_b_theta(0, par);
+    }
     
-    f.function = inthelperf_Qqg_component_n_b;
-    //gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
-    double result,error;
-    int status = gsl_integration_qag(&f, 0, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, gsl_wp_bint, &result, &error);
-    
-    if (status)
-        cerr << "#bint failed, result " << result << " relerror " << error << endl;
-    
-    //gsl_integration_workspace_free(w);
-    
-    return result;
-	
+    else
+    {
+        gsl_function f;
+        f.params = par;
+        
+        f.function = inthelperf_Qqg_component_n_b;
+        //gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+        double result,error;
+        int status = gsl_integration_qag(&f, 0, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, gsl_wp_bint, &result, &error);
+        
+        if (status)
+            cerr << "#bint failed, result " << result << " relerror " << error << endl;
+        
+        //gsl_integration_workspace_free(w);
+        
+        return result;
+    }
 }
 
 double InclusiveDiffraction::DiffractiveStructureFunction_qqg_GBW_T(double xpom, double beta, double qsqr)
@@ -176,6 +196,7 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qqg_GBW_T(double xpom,
 	par.xpom=xpom;
 	par.beta=beta;
 	par.qsqr=qsqr;
+    par.ipsat=ipsat;
 	
 	double mxsqr = qsqr / beta - qsqr;
 	par.Mxsqr = mxsqr;
@@ -234,8 +255,6 @@ double inthelperf_MS_r(double r, void* p)
     double wf_sqr = photon.PsiSqr_T_intz(par->qsqr, r);
         
     
-	
-	
 	return r*wf_sqr*par->diffraction->A_bint(r, par->xpom);
 }
 
@@ -292,14 +311,14 @@ double inthelperf_A_r2_theta(double theta, void* p)
 	Vec q1_r(par->b_len + par->r/2.0,0);
 	Vec q2_r(par->b_len - par->r/2.0, 0);
 	
-	double n_r1 = par->amp->Amplitude(par->xpom, q1_r, q2_r);
+    double n_r1 = par->amp->Amplitude(par->xpom, q1_r, q2_r);
 	
 	
 	
 	Vec q1_r2(par->b_len + par->r2/2.0, 0);
 	Vec q2_r2(par->b_len - par->r2/2.0, 0);
 	Vec d_r2 = q1_r2 - q2_r2;
-	double n_r2 = par->amp->Amplitude(par->xpom, q1_r2, q2_r2);
+    double n_r2 = par->amp->Amplitude(par->xpom, q1_r2, q2_r2);
 	
 	// Then calculate length of r-r2
 	Vec r(par->r, 0);	
@@ -309,11 +328,18 @@ double inthelperf_A_r2_theta(double theta, void* p)
 	
 	Vec q1_rr2(par->b_len + rr2/2.0, 0);
 	Vec q2_rr2(par->b_len - rr2/2.0, 0);
-	double n_rr2 = par->amp->Amplitude(par->xpom, q1_rr2, q2_rr2);
+    
+    double n_rr2 = par->amp->Amplitude(par->xpom, q1_rr2, q2_rr2);
 	
 	double kernel = pow(par->r, 2.0) / ( pow(par->r2*rr2, 2.0) + 1e-30);
+    
+    // nonlinear term, ipnonsat: consistent to drop (?)
+    double nonlinear =n_r2*n_rr2;
+    if (par->ipsat == MZNONSAT)
+        nonlinear = 0;
+    
 	
-	double dipole = pow(n_r2 + n_rr2 - n_r1 - n_r2*n_rr2,2.0);
+	double dipole = pow(n_r2 + n_rr2 - n_r1 - nonlinear,2.0);
 	
 	
 	//cout << kernel << " " << dipole <<" " << par->r << " " << par->r2 <<endl;
@@ -385,6 +411,15 @@ double InclusiveDiffraction::A_bint(double r, double xpom)
 	par.diffraction=this;
 	par.xpom=xpom;
 	par.r=r;
+    
+    // Own IPsat fit: b integrals are done analytically
+    if (ipsat == MZSAT or ipsat==MZNONSAT)
+    {
+        Vec bvec(0,0);
+        // Drop nonlinear term, do b integral for all other N(r,b) by pulling out e^(-b^2/(2B))
+        // Effectively we evaluate A at b=0 and multiply the result by \int d^2 [e^(-b^2/(2B))]^2 = pi*B
+        return M_PI*4.0*A(r, xpom, bvec);
+    }
 	
 	gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
 	gsl_function f;
