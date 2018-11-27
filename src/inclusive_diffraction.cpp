@@ -29,12 +29,18 @@ InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
 {
 	amplitude=amp;
     //m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4);
-    //m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(1.3516);
-    m_f.push_back(0.13886); m_f.push_back(0.13886);m_f.push_back(0.13886); m_f.push_back(1.3420);
+    
+    // mz ipsat
+    //m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(1.3528);
+    
+    // mz ipnonsat
+    m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
+    
+   // m_f.push_back(0.13886); m_f.push_back(0.13886);m_f.push_back(0.13886); m_f.push_back(1.3420);
     
     e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
     
-    ipsat = MZNONSAT;
+    ipsat = IPSAT12;
 }
     
  // qq component 
