@@ -11,6 +11,7 @@
  // Monte carlo ipsat NOT FULLY supported, as we have 2d vector to describe b
  
 #include "inclusive_diffraction.hpp"
+#include <amplitudelib/virtual_photon.hpp>
 #include <gsl/gsl_integration.h>
 #include <vector.hpp>
 #include <gsl/gsl_sf_bessel.h>
@@ -22,7 +23,7 @@ using namespace std;
 
 const double MAXR = 100;
 const int INTERVALS = 5;
-const double ACCURACY = 0.01;
+const double ACCURACY = 0.001;
 
  
 InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsatv )
@@ -33,10 +34,12 @@ InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version i
     if (ipsatv == MZNONSAT)
     {
         m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
+        //m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);
     }
     else if (ipsatv == MZSAT)
     {
         m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.3528);
+        //m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);
     }
     else if (ipsatv == IPSAT12)
     {
@@ -358,6 +361,112 @@ double InclusiveDiffraction::Qq_component_n(double xpom, double qsqr, double Mxs
 	
 	
 	
+}
+
+
+
+/////////////////////////////
+// Total diffractive xs
+// 0705.3047 (8)
+/////////////////////////////
+
+double inthelperf_rint_total_qq(double r, void* p)
+{
+    inthelper_inclusive* par = (inthelper_inclusive*)p;
+    
+    VirtualPhoton wf;
+    
+   if (par->diffraction->NumberOfQuarks() != 4)
+    {
+        cerr << "Wrong number of quarks! " << LINEINFO << endl;
+        exit(1);
+    }
+   
+    double sum=0;
+    wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r);
+    
+    return sum*2.0*M_PI*r* ((Ipsat_Proton*)(par->amp))->Amplitude_sqr_bint(par->xpom,r);
+}
+
+double InclusiveDiffraction::TotalDiffractive_qq(double xpom, double qsqr)
+{
+    inthelper_inclusive par;
+    par.diffraction = this;
+    par.xpom=xpom;
+    par.ipsat=ipsat;
+    par.qsqr=qsqr;
+    par.amp=amplitude;
+    gsl_function f;
+    f.params = &par;
+    f.function = inthelperf_rint_total_qq;
+    
+    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+    double error,result;
+    int status = gsl_integration_qag(&f, 1e-5, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+    
+    if (status)
+        cerr << "#rint failed, result " << result << " relerror " << error/result  << endl;
+    
+    gsl_integration_workspace_free(w);
+    return result;
+}
+
+
+
+
+double inthelperf_rint_inclusive_qq(double r, void* p)
+{
+    inthelper_inclusive* par = (inthelper_inclusive*)p;
+    
+    VirtualPhoton wf;
+    
+    if (par->diffraction->NumberOfQuarks() != 4)
+    {
+        cerr << "Wrong number of quarks! " << LINEINFO << endl;
+        exit(1);
+    }
+    
+    double sum=0;
+    wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    
+    return sum*2.0*M_PI*r* 2*((Ipsat_Proton*)(par->amp))->Amplitude_bint(par->xpom,r);
+}
+
+double InclusiveDiffraction::TotalInclusive_qq(double xpom, double qsqr)
+{
+    inthelper_inclusive par;
+    par.diffraction = this;
+    par.xpom=xpom;
+    par.ipsat=ipsat;
+    par.qsqr=qsqr;
+    par.amp=amplitude;
+    gsl_function f;
+    f.params = &par;
+    f.function = inthelperf_rint_inclusive_qq;
+    
+    gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
+    double error,result;
+    int status = gsl_integration_qag(&f, 1e-5, MAXR, 0, ACCURACY, INTERVALS, GSL_INTEG_GAUSS51, w, &result, &error);
+    
+    if (status)
+    cerr << "#rint failed, result " << result << " relerror " << error/result  << endl;
+    
+    gsl_integration_workspace_free(w);
+    return result;
 }
 
 

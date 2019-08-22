@@ -26,6 +26,10 @@ public:
     // qq component 
     double DiffractiveStructureFunction_qq_T(double xpom, double beta, double qsqr);
     double DiffractiveStructureFunction_qq_L(double xpom, double beta, double qsqr);
+    double TotalDiffractive_qq(double xpom, double qsqr);   // Sum over t and l
+    
+    // For easy comparisons also get total inclusive
+    double TotalInclusive_qq(double xpom, double qsqr);   // Sum over t and l
     
     // qqg, two approximations
     double  DiffractiveStructureFunction_qqg_GBW_T(double xpom, double beta, double qsqr);
@@ -42,6 +46,8 @@ public:
     double QuarkMass(int i);
     double QuarkCharge(int i);
     int NumberOfQuarks();
+    
+    DipoleAmplitude* GetAmplitude() { return amplitude; }
     
 private:
     DipoleAmplitude* amplitude;

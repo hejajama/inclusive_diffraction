@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
     bool ms=false;
     bool smallb=false;
     double gbw = false;
+    bool total=false;
    
     
     cout << "# Inclusive Diffraction by H. Mäntysaari <heikki.mantysaari@jyu.fi>, 2016-2019" << endl;
@@ -126,6 +127,8 @@ int main(int argc, char* argv[])
             smallb=true;
         else if (string(argv[i])=="-qq")
             gbw=false;
+        else if (string(argv[i])=="-total")
+            total=true;
         
         else if (string(argv[i]).substr(0,1)=="-")
         {
@@ -134,7 +137,8 @@ int main(int argc, char* argv[])
         }
         
     }
-
+    
+    
     
     
     // Initialize global random number generator
@@ -152,6 +156,22 @@ int main(int argc, char* argv[])
 
     
     InclusiveDiffraction diffraction(amp, ipsatv);
+    
+    if (total)
+    {
+        cout <<"# Q^2=" << Qsqr << endl;
+        for (double xp = 1e-12; xp < 0.02; xp*=1.2)
+        {
+            double diffractive =diffraction.TotalDiffractive_qq(xp,Qsqr);
+            double inclusive = diffraction.TotalInclusive_qq(xp,Qsqr);
+            
+            cout << xp << " " << diffractive << " " << inclusive << " " << diffractive/inclusive << endl;
+        }
+        
+        
+        return 0;
+    }
+    
     
     
     if (beta > 0)
