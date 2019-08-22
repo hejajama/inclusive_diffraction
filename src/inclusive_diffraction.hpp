@@ -21,7 +21,7 @@ const double ALPHAs=0.3;
 class InclusiveDiffraction
 {
 public:
-    InclusiveDiffraction(DipoleAmplitude* amp);
+    InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsat_);
     
     // qq component 
     double DiffractiveStructureFunction_qq_T(double xpom, double beta, double qsqr);

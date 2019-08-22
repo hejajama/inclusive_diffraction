@@ -2,7 +2,7 @@
  * Inclusive diffraction
  * Main reference: 0805.4071
  * 
- * Heikki Mäntysaari <mantysaari@bnl.gov>, 2016
+ * Heikki Mäntysaari <heikki.mantysaari@jyu.fi>, 2016-2019
  * 
  */
 
@@ -25,6 +25,7 @@
 #include <nucleons.hpp>
 
 #include "inclusive_diffraction.hpp"
+#include "gitsha1.h"
 
 using namespace std;
 
@@ -41,6 +42,7 @@ int main(int argc, char* argv[])
     
     double Qsqr=0;
     double xpom=0; // x for F2
+    double beta = -1;   // if beta>0, use fixed beta and compute as a function of xpom
     double t=0.1;
     int A=1;
     DGLAPDist *gd=0;  // Initialized and used if we have nucleus consisting of ipsatnucleons (old ipsat)
@@ -50,8 +52,8 @@ int main(int argc, char* argv[])
     double gbw = false;
    
     
-    
-    cout << "# Inclusive Diffraction by H. Mäntysaari <mantysaari@bnl.gov>, 2016" << endl;
+    cout << "# Inclusive Diffraction by H. Mäntysaari <heikki.mantysaari@jyu.fi>, 2016-2019" << endl;
+    cout << "# Git version " << g_GIT_SHA1 << " local repo " << g_GIT_LOCAL_CHANGES << " main build " << __DATE__  << " " << __TIME__ << endl;
     cout << "# Command: ";
     for (int i=1; i<argc; i++)
         cout << argv[i] << " ";
@@ -63,6 +65,8 @@ int main(int argc, char* argv[])
         return 0;
     }
     
+    Ipsat_version ipsatv;
+    
     for (int i=1; i<argc; i++)
     {
        
@@ -71,33 +75,32 @@ int main(int argc, char* argv[])
             A = StrToInt(argv[i+1]);
             if (A==1)
             {
-                if (string(argv[i+2])=="ipsatproton")
+                if (string(argv[i+2])=="ipsatproton" or string(argv[i+2])=="ipnonsatproton" or string(argv[i+2])=="ipsat12proton")
                 {
-                    amp = new Ipsat_Proton(MZNONSAT);
+                    if(string(argv[i+2])=="ipsatproton")
+                        ipsatv = MZSAT;
+                    else if(string(argv[i+2])=="ipnonsatproton")
+                        ipsatv = MZNONSAT;
+                    else if(string(argv[i+2])=="ipsat12proton")
+                        ipsatv = IPSAT12;
+                    else
+                    {
+                        cerr << "WTF ipsat: " << argv[i+2] << endl;
+                        exit(1);
+                    }
+                    amp = new Ipsat_Proton(ipsatv);
+                    
                     ((Ipsat_Proton*)amp)->SetProtonWidth(StrToReal(argv[i+3]));
                     ((Ipsat_Proton*)amp)->SetQuarkWidth(StrToReal(argv[i+4]));
                   
-                        ((Ipsat_Proton*)amp)->SetShape(GAUSSIAN);
-                        if (argc > i+5)
-                        {
-                            if (string(argv[i+5])=="fluxtube")
-                            {
-                                ((Ipsat_Proton*)amp)->SetStructure(CENTER_TUBES);
-                                ((Ipsat_Proton*)amp)->SetFluxTubeNormalization(StrToReal(argv[i+5]));
-                            }
-                            else if (string(argv[i+5]).substr(0,1)!="-")
-                            {
-                                cerr << "Unknown ipsatproton option " << argv[i+4] << endl;
-                                exit(1);
-                            }
-                        }
+                    ((Ipsat_Proton*)amp)->SetShape(GAUSSIAN);
                     
                 }
                 else if (string(argv[i+2])=="ipglasma")
                     amp = new IPGlasma(argv[i+3]);
                 else
                 {
-                    cerr << "Unknown dipole " << argv[i+1] << endl;
+                    cerr << "Unknown dipole " << argv[i+2] << endl;
                     return -1;
                 }
             }
@@ -106,11 +109,15 @@ int main(int argc, char* argv[])
                 amp = new Smooth_ws_nuke(A);
             }
             
+            
+            
         }
         else if (string(argv[i])=="-Q2")
             Qsqr = StrToReal(argv[i+1]);
         else if (string(argv[i])=="-xpom")
             xpom = StrToReal(argv[i+1]);
+        else if (string(argv[i])=="-beta")
+            beta = StrToReal(argv[i+1]);
         else if (string(argv[i])=="-ms")
             ms=true;
         else if (string(argv[i])=="-gbw")
@@ -119,6 +126,7 @@ int main(int argc, char* argv[])
             smallb=true;
         else if (string(argv[i])=="-qq")
             gbw=false;
+        
         else if (string(argv[i]).substr(0,1)=="-")
         {
             cerr << "Unknown parameter " << argv[i] << endl;
@@ -135,13 +143,31 @@ int main(int argc, char* argv[])
 
     amp->InitializeTarget();
     
+    cout <<"# Dipole amplitude initialized, N(r=1 GeV^-1, xp=0.001,b=0)=" << amp->Amplitude(0.001, Vec(-0.5,0), Vec(0.5,0)) << endl;
+    
     
     cout << "# " << InfoStr() ;
     InitializeWSDistribution(197);
         
 
     
-    InclusiveDiffraction diffraction(amp);
+    InclusiveDiffraction diffraction(amp, ipsatv);
+    
+    
+    if (beta > 0)
+    {
+        cout <<"# Q^2=" << Qsqr <<", beta=" << beta << endl;
+        for (double xp = 1e-7; xp < 0.02; xp*=1.2)
+        {
+            double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xp, beta, Qsqr);
+            double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xp, beta, Qsqr);
+            cout << xp << " " << f_qq_t << " " << f_qq_l << endl;
+        }
+        
+        
+        return 0;
+    }
+    
     
     cout << "#Q^2=" << Qsqr << " GeV^2, xpom=" << xpom << endl;
     
@@ -163,6 +189,7 @@ int main(int argc, char* argv[])
             return 0;
         }
     }
+    
     
     for (double beta=0.02; beta<1; beta+=0.04)
     {

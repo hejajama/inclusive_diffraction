@@ -21,26 +21,36 @@ using namespace std;
  
 
 const double MAXR = 100;
-const int INTERVALS = 3;
-const double ACCURACY = 0.05;
+const int INTERVALS = 5;
+const double ACCURACY = 0.01;
 
  
-InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp)
+InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsatv )
 {
 	amplitude=amp;
-    //m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(0.14); m_f.push_back(1.4);
-    
-    // mz ipsat
-    //m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(0.03); m_f.push_back(1.3528);
     
     // mz ipnonsat
-    m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
-    
-   // m_f.push_back(0.13886); m_f.push_back(0.13886);m_f.push_back(0.13886); m_f.push_back(1.3420);
+    if (ipsatv == MZNONSAT)
+    {
+        m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
+    }
+    else if (ipsatv == MZSAT)
+    {
+        m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.3528);
+    }
+    else if (ipsatv == IPSAT12)
+    {
+         m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.4);
+    }
+    else
+    {
+        cerr << "Unknown ipsat version!" << endl;
+        exit(1);
+    }
     
     e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
     
-    ipsat = IPSAT12;
+    ipsat = ipsatv;
 }
     
  // qq component 
