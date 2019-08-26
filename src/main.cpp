@@ -105,9 +105,18 @@ int main(int argc, char* argv[])
                     return -1;
                 }
             }
-            else
+            else // A>1
             {
-                amp = new Smooth_ws_nuke(A);
+                if(string(argv[i+2])=="ipsatproton")
+                    ipsatv = MZSAT;
+                else if(string(argv[i+2])=="ipnonsatproton")
+                    ipsatv = MZNONSAT;
+                else
+                {
+                    cerr << "Unknown dipole " << argv[i+2] << endl;
+                    exit(1);
+                }
+                amp = new Smooth_ws_nuke(A, ipsatv);
             }
             
             
@@ -151,7 +160,7 @@ int main(int argc, char* argv[])
     
     
     cout << "# " << InfoStr() ;
-    InitializeWSDistribution(197);
+    
         
 
     

@@ -392,7 +392,7 @@ double inthelperf_rint_total_qq(double r, void* p)
     wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
     sum += wf.PsiSqr_T_intz(par->qsqr,r);
     
-    return sum*2.0*M_PI*r* ((Ipsat_Proton*)(par->amp))->Amplitude_sqr_bint(par->xpom,r);
+    return sum*2.0*M_PI*r* par->amp->Amplitude_sqr_bint(par->xpom,r);
 }
 
 double InclusiveDiffraction::TotalDiffractive_qq(double xpom, double qsqr)
@@ -443,7 +443,7 @@ double inthelperf_rint_inclusive_qq(double r, void* p)
     wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
     sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     
-    return sum*2.0*M_PI*r* 2*((Ipsat_Proton*)(par->amp))->Amplitude_bint(par->xpom,r);
+    return sum*2.0*M_PI*r* 2*par->amp->Amplitude_bint(par->xpom,r);
 }
 
 double InclusiveDiffraction::TotalInclusive_qq(double xpom, double qsqr)
