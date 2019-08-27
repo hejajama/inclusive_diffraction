@@ -25,8 +25,8 @@ target_link_libraries(
 	inclusive_diffraction
 	PRIVATE
 	inclusivediffraction
-	amplitude
 	ddis
+	amplitude
 	ColorDipole
 	mzipsat
 	GSL::gsl
