@@ -1,0 +1,8 @@
+*.o
+build
+test
+tmp
+sat_vs_nonsat
+structure_function
+eic
+diff_total
