@@ -34,12 +34,10 @@ InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version i
     if (ipsatv == MZNONSAT)
     {
         m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
-        //m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);
     }
     else if (ipsatv == MZSAT)
     {
         m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.3528);
-        //m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);m_f.push_back(1.4);
     }
     else if (ipsatv == IPSAT12)
     {
@@ -375,24 +373,37 @@ double inthelperf_rint_total_qq(double r, void* p)
     inthelper_inclusive* par = (inthelper_inclusive*)p;
     
     VirtualPhoton wf;
-    
-   if (par->diffraction->NumberOfQuarks() != 4)
+   
+    double sum = 0;
+    if (par->diffraction->NumberOfQuarks() == 1)    // charm
     {
-        cerr << "Wrong number of quarks! " << LINEINFO << endl;
+        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(0));
+        sum = wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    }
+    else if (par->diffraction->NumberOfQuarks() == 4)    // all
+    {
+        wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    }
+    else
+    {
+        cerr << "Unknown number of quarks in inthelperf_rint_total_qq" << endl;
         exit(1);
     }
-   
-    double sum=0;
-    wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r);
     
-    return sum*2.0*M_PI*r* par->amp->Amplitude_sqr_bint(par->xpom,r);
+    double ampsqr_bint =par->amp->Amplitude_sqr_bint(par->xpom,r);
+    if (isnan(ampsqr_bint) or isinf(ampsqr_bint) or ampsqr_bint<0)
+    {
+        cerr << "ERROR, \\int d^2 b N(r,b)^2 = " << ampsqr_bint << " at r=" << r << ", x=" << par->xpom << endl;
+        exit(1);
+    }
+    return sum*2.0*M_PI*r* ampsqr_bint;
 }
 
 double InclusiveDiffraction::TotalDiffractive_qq(double xpom, double qsqr)
@@ -427,21 +438,28 @@ double inthelperf_rint_inclusive_qq(double r, void* p)
     
     VirtualPhoton wf;
     
-    if (par->diffraction->NumberOfQuarks() != 4)
+    double sum = 0;
+    if (par->diffraction->NumberOfQuarks() == 1)    // charm
     {
-        cerr << "Wrong number of quarks! " << LINEINFO << endl;
+        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(0));
+        sum = wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    }
+    else if (par->diffraction->NumberOfQuarks() == 4)    // all
+    {
+        wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+        sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
+    }
+    else
+    {
+        cerr << "Unknown number of quarks in inthelperf_rint_total_qq" << endl;
         exit(1);
     }
-    
-    double sum=0;
-    wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-    wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
-    sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     
     return sum*2.0*M_PI*r* 2*par->amp->Amplitude_bint(par->xpom,r);
 }

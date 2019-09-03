@@ -169,10 +169,12 @@ int main(int argc, char* argv[])
     if (total)
     {
         cout <<"# Q^2=" << Qsqr << endl;
-        for (double xp = 1e-12; xp < 0.02; xp*=1.2)
+        for (double xp = 1e-12; xp < 0.02; xp*=1.2*1.2*1.2)
         {
-            double diffractive =diffraction.TotalDiffractive_qq(xp,Qsqr);
             double inclusive = diffraction.TotalInclusive_qq(xp,Qsqr);
+            
+            double diffractive =diffraction.TotalDiffractive_qq(xp,Qsqr);
+            
             
             cout << xp << " " << diffractive << " " << inclusive << " " << diffractive/inclusive << endl;
         }
