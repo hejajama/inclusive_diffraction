@@ -26,22 +26,38 @@ const int INTERVALS = 5;
 const double ACCURACY = 0.001;
 
  
-InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsatv )
+InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsatv, bool charm , int mass)
 {
 	amplitude=amp;
+    nuclear_mass = mass;
     
     // mz ipnonsat
     if (ipsatv == MZNONSAT)
     {
-        m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
+        if (charm)
+            m_f.push_back(1.3504);
+        else
+        {
+            m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(0.1516); m_f.push_back(1.3504);
+        }
     }
     else if (ipsatv == MZSAT)
     {
-        m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.3528);
+        if (charm)
+            m_f.push_back(1.3528);
+        else
+        {
+            m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.3528);
+        }
     }
     else if (ipsatv == IPSAT12)
     {
-         m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.4);
+        if (charm)
+             m_f.push_back(1.4);
+        else
+        {
+            m_f.push_back(0.03); m_f.push_back(0.03);m_f.push_back(0.03); m_f.push_back(1.4);
+        }
     }
     else
     {
@@ -49,7 +65,12 @@ InclusiveDiffraction::InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version i
         exit(1);
     }
     
-    e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
+    if (charm)
+        e_f.push_back(2.0/3.0);
+    else
+    {
+        e_f.push_back(2.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(1.0/3.0); e_f.push_back(2.0/3.0);
+    }
     
     ipsat = ipsatv;
 }
@@ -321,7 +342,7 @@ double InclusiveDiffraction::Qq_component_n(double xpom, double qsqr, double Mxs
     }
     
     double result=0;
-    if (ipsat == MZNONSAT)
+    if (ipsat == MZNONSAT and nuclear_mass == 1)
     {
         // Do b integral analytically
         // Factorize N(r,b) = N(r) e^(-b^2/(2B))

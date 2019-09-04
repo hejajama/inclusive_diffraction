@@ -21,7 +21,7 @@ const double ALPHAs=0.3;
 class InclusiveDiffraction
 {
 public:
-    InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsat_);
+    InclusiveDiffraction(DipoleAmplitude* amp, Ipsat_version ipsat_, bool charm=false, int mass_=1);
     
     // qq component 
     double DiffractiveStructureFunction_qq_T(double xpom, double beta, double qsqr);
@@ -51,6 +51,8 @@ public:
     
 private:
     DipoleAmplitude* amplitude;
+    
+    int nuclear_mass;       // A=1 proton, A>1 nucleus
     
     
     std::vector<double> m_f;	// Quark masses

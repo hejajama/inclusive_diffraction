@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     bool smallb=false;
     double gbw = false;
     bool total=false;
+    bool charm=false;
    
     
     cout << "# Inclusive Diffraction by H. Mäntysaari <heikki.mantysaari@jyu.fi>, 2016-2019" << endl;
@@ -117,6 +118,7 @@ int main(int argc, char* argv[])
                     exit(1);
                 }
                 amp = new Smooth_ws_nuke(A, ipsatv);
+                ((Smooth_ws_nuke*)amp)->SetSmoothApproximation(true);
             }
             
             
@@ -138,6 +140,8 @@ int main(int argc, char* argv[])
             gbw=false;
         else if (string(argv[i])=="-total")
             total=true;
+        else if (string(argv[i])=="-charm")
+            charm=true;
         
         else if (string(argv[i]).substr(0,1)=="-")
         {
@@ -164,11 +168,17 @@ int main(int argc, char* argv[])
         
 
     
-    InclusiveDiffraction diffraction(amp, ipsatv);
+    InclusiveDiffraction diffraction(amp, ipsatv, charm, A);
+    
+    if (charm)
+        cout << "# Including only charm quarks" << endl;
+    else
+        cout << "# Quarks: u,d,s,c" << endl;
     
     if (total)
     {
         cout <<"# Q^2=" << Qsqr << endl;
+        cout << "#xp diffractive inclusive ratio" << endl;
         for (double xp = 1e-12; xp < 0.02; xp*=1.2*1.2*1.2)
         {
             double inclusive = diffraction.TotalInclusive_qq(xp,Qsqr);
@@ -188,7 +198,8 @@ int main(int argc, char* argv[])
     if (beta > 0)
     {
         cout <<"# Q^2=" << Qsqr <<", beta=" << beta << endl;
-        for (double xp = 1e-7; xp < 0.02; xp*=1.2)
+        cout << "# xp transverse longitudinal" << endl;
+        for (double xp = 1e-12; xp < 0.02; xp*=1.2*1.2*1.2)
         {
             double f_qq_t = diffraction.DiffractiveStructureFunction_qq_T(xp, beta, Qsqr);
             double f_qq_l = diffraction.DiffractiveStructureFunction_qq_L(xp, beta, Qsqr);
