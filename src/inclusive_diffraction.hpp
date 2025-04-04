@@ -12,7 +12,7 @@
 
 
 #include "dipole.hpp"
-#include <ipsat_proton.hpp>
+#include "ipsat_proton.hpp"
 #include <vector.hpp>
 #include <vector>
 

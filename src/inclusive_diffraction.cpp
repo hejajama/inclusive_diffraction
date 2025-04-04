@@ -11,12 +11,13 @@
  // Monte carlo ipsat NOT FULLY supported, as we have 2d vector to describe b
  
 #include "inclusive_diffraction.hpp"
-#include <amplitudelib/virtual_photon.hpp>
 #include <gsl/gsl_integration.h>
 #include <vector.hpp>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_rng.h>
 #include <cmath>
+#include <virtual_photon.hpp>
+#include <qcd.hpp>
 
 using namespace std;
  
@@ -398,18 +399,18 @@ double inthelperf_rint_total_qq(double r, void* p)
     double sum = 0;
     if (par->diffraction->NumberOfQuarks() == 1)    // charm
     {
-        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(0));
+        wf.SetQuark(C, par->diffraction->QuarkMass(0));
         sum = wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     }
     else if (par->diffraction->NumberOfQuarks() == 4)    // all
     {
-        wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+        wf.SetQuark(U, par->diffraction->QuarkMass(0));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+        wf.SetQuark(D, par->diffraction->QuarkMass(1));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+        wf.SetQuark(S, par->diffraction->QuarkMass(2));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+        wf.SetQuark(C, par->diffraction->QuarkMass(3));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     }
     else
@@ -462,18 +463,18 @@ double inthelperf_rint_inclusive_qq(double r, void* p)
     double sum = 0;
     if (par->diffraction->NumberOfQuarks() == 1)    // charm
     {
-        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(0));
+        wf.SetQuark(C, par->diffraction->QuarkMass(0));
         sum = wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     }
     else if (par->diffraction->NumberOfQuarks() == 4)    // all
     {
-        wf.SetQuark(Amplitude::U, par->diffraction->QuarkMass(0));
+        wf.SetQuark(U, par->diffraction->QuarkMass(0));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::D, par->diffraction->QuarkMass(1));
+        wf.SetQuark(D, par->diffraction->QuarkMass(1));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::S, par->diffraction->QuarkMass(2));
+        wf.SetQuark(S, par->diffraction->QuarkMass(2));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
-        wf.SetQuark(Amplitude::C, par->diffraction->QuarkMass(3));
+        wf.SetQuark(C, par->diffraction->QuarkMass(3));
         sum += wf.PsiSqr_T_intz(par->qsqr,r) + wf.PsiSqr_L_intz(par->qsqr,r);
     }
     else

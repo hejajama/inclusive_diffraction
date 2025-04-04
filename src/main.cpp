@@ -14,8 +14,9 @@
 
 #include <gsl/gsl_rng.h>
 
-#include <tools/tools.hpp>
+//#include <tools/tools.hpp>
 #include <gsl/gsl_errno.h>
+#include <subnucleon_config.hpp>
 
 #include <dipole.hpp>
 #include <smooth_ws_nuke.hpp>

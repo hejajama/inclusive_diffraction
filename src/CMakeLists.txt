@@ -16,18 +16,14 @@ add_executable(
 	dummy.f
 )
 # Fortran file is here as a hack, so that CMake includes -lgfortran
-
-
-include_directories(.)
-
-find_package(GSL REQUIRED)    #
+   #
 target_link_libraries(
 	inclusive_diffraction
 	PRIVATE
 	inclusivediffraction
+	#amplitude
+	#ColorDipole
 	ddis
-	amplitude
-	ColorDipole
 	mzipsat
 	GSL::gsl
 	GSL::gslcblas

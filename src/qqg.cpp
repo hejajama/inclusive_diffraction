@@ -17,7 +17,7 @@
 #include <gsl/gsl_rng.h>
 #include <cmath>
 #include <iostream>
-#include <amplitudelib/virtual_photon.hpp>
+#include <virtual_photon.hpp>
 using namespace std;
 
 const int INTERVALS=3;
