@@ -2,7 +2,7 @@
  * Inclusive diffraction
  * Main reference: 0805.4071
  * 
- * Heikki Mäntysaari <mantysaari@bnl.gov>, 2016
+ * Heikki Mäntysaari <mantysaari@bnl.gov>, 2016-2025
  * 
  */
  
@@ -20,8 +20,8 @@
 #include <virtual_photon.hpp>
 using namespace std;
 
-const int INTERVALS=3;
-const double ACCURACY=0.05;
+const int INTERVALS=16;
+const double ACCURACY=0.001;
 const double MAXR=100;
 
 gsl_integration_workspace *gsl_wp_kint;
@@ -153,7 +153,7 @@ double inthelperf_zint_gbw(double z, void* p)
 	
 	par->z=z;
 	
-    if (par->ipsat == MZNONSAT)
+    if (par->ipsat == MZNONSAT or par->ipsat==MZSAT)
     {
         // Do b integral analytically
         // Factorize N(r,b) = N(r) e^(-b^2/(2B))
@@ -162,8 +162,9 @@ double inthelperf_zint_gbw(double z, void* p)
         // This is possible as we assume here that in ipnonsat model the adjoint dipole
         // N_adj = 2*N_fund
         
-        
         // Effectively evaluate N(r,b) at b=0
+
+        // Note that b dependence does not actually factor out from IPsat!
         double B_p=4.0;
         par->b_len = 0;
         return M_PI*B_p*inthelperf_Qqg_component_n_b_theta(0, par);
@@ -222,14 +223,14 @@ double InclusiveDiffraction::DiffractiveStructureFunction_qqg_GBW_T(double xpom,
     //cout << "zint from " << z0 << " to 1/2: " << result << " relerr " << error/result << endl;
     
     if (status)
-        cerr << "#z from " << z0 << " to 1 failed, result " << result << " relerror " << error  << endl;
+        cerr << "#z from " << z0 << " to 1 failed, result " << result << " relerror " << error/result  << endl;
     
     gsl_integration_workspace_free(w);
     gsl_integration_workspace_free(gsl_wp_bint);
     gsl_integration_workspace_free(gsl_wp_rint);
     gsl_integration_workspace_free(gsl_wp_kint);
     
-    cout << "# GBW integral,  beta " << beta << " result " << result << " abserr " << error << endl;
+    cout << "# GBW integral,  beta " << beta << " result " << result << " relerror " << error/result << endl;
     
     
     // e_f^2 sum
@@ -251,7 +252,7 @@ double inthelperf_MS_r(double r, void* p)
 	par->r = r;
 	
 	
-    VirtualPhoton photon; // default udsc quarks
+    VirtualPhoton photon; // default uds quarks
     double wf_sqr = photon.PsiSqr_T_intz(par->qsqr, r);
         
     
@@ -306,40 +307,36 @@ double inthelperf_A_r2_theta(double theta, void* p)
 	inthelper_inclusive* par = (inthelper_inclusive*)p;
 	
 	// r, r2, r-r2 dipoles, with given impact parameter b
-	// As we assume that the target dipole amplitude is b independent, 
+	// As we assume that the target dipole amplitude does not depend on angles, 
 	// we can set vec b = (b,0)
-	Vec q1_r(par->b_len + par->r/2.0,0);
-	Vec q2_r(par->b_len - par->r/2.0, 0);
+
+    // Note that when using a factorized b dependence, this is evaluated with b=0
+	Vec q1(0,0);
+    Vec q2(par->r,0); 
+    Vec q3(par->r2*cos(theta), par->r2*sin(theta));
+
+    q1 = q1+par->b;
+    q2 = q2+par->b;
+    q3 = q3+par->b;
+
+    Vec r = q1-q2;
+    Vec rp = q1-q3;
+    Vec r_m_rp = q2-q3;
+
 	
-    double n_r1 = par->amp->Amplitude(par->xpom, q1_r, q2_r);
+    double nr2 = par->amp->Amplitude(par->xpom, q1,q3);	
+    double nr1 = par->amp->Amplitude(par->xpom, q2, q3);
+    double nr0 = par->amp->Amplitude(par->xpom, q1, q2);
 	
-	
-	
-	Vec q1_r2(par->b_len + par->r2/2.0, 0);
-	Vec q2_r2(par->b_len - par->r2/2.0, 0);
-	Vec d_r2 = q1_r2 - q2_r2;
-    double n_r2 = par->amp->Amplitude(par->xpom, q1_r2, q2_r2);
-	
-	// Then calculate length of r-r2
-	Vec r(par->r, 0);	
-	Vec r2(par->r2*cos(theta), par->r2*sin(theta));
-	Vec d = r - r2;
-	double rr2 = d.Len();
-	
-	Vec q1_rr2(par->b_len + rr2/2.0, 0);
-	Vec q2_rr2(par->b_len - rr2/2.0, 0);
-    
-    double n_rr2 = par->amp->Amplitude(par->xpom, q1_rr2, q2_rr2);
-	
-	double kernel = pow(par->r, 2.0) / ( pow(par->r2*rr2, 2.0) + 1e-30);
+	double kernel = r.LenSqr() / ( rp.LenSqr()*r_m_rp.LenSqr() + 1e-40);
     
     // nonlinear term, ipnonsat: consistent to drop (?)
-    double nonlinear =n_r2*n_rr2;
+    double nonlinear =nr1*nr2;
     if (par->ipsat == MZNONSAT)
         nonlinear = 0;
     
 	
-	double dipole = pow(n_r2 + n_rr2 - n_r1 - nonlinear,2.0);
+	double dipole = pow(nr1 + nr2 - nr0 - nonlinear,2.0);
 	
 	
 	//cout << kernel << " " << dipole <<" " << par->r << " " << par->r2 <<endl;
@@ -411,14 +408,17 @@ double InclusiveDiffraction::A_bint(double r, double xpom)
 	par.diffraction=this;
 	par.xpom=xpom;
 	par.r=r;
-    
-    // Own IPsat fit: b integrals are done analytically
+
+    // Factorized b dependence. NOTE: Currently the code assumes that for ipsat also, 
+    // although T(b) dependence does not actually factor out 
     if (ipsat == MZSAT or ipsat==MZNONSAT)
     {
         Vec bvec(0,0);
-        // Drop nonlinear term, do b integral for all other N(r,b) by pulling out e^(-b^2/(2B))
+        
+        // ¨ do b integral for all N(r,b) by pulling out e^(-b^2/(2B))
         // Effectively we evaluate A at b=0 and multiply the result by \int d^2 [e^(-b^2/(2B))]^2 = pi*B
         return M_PI*4.0*A(r, xpom, bvec);
+        
     }
 	
 	gsl_integration_workspace *w = gsl_integration_workspace_alloc(INTERVALS);
